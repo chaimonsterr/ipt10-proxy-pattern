@@ -1,22 +1,39 @@
 <?php
 declare(strict_types=1);
 
+// ==========================================
 // 1. Shared Subject Interface
+// ==========================================
 interface DocumentInterface
 {
     public function display(): void;
 }
 
-// 2. Real Subject (The sensitive object)
+// ==========================================
+// 2. Real Subject (Heavy/Sensitive Object)
+// ==========================================
 class RealDocument implements DocumentInterface
 {
+    public function __construct()
+    {
+        // Simulates a heavy operation (e.g., loading a large confidential file)
+        echo "   [SYSTEM] Loading confidential database file into memory...\n";
+    }
+
     public function display(): void
     {
-        echo "Displaying sensitive content: Confidential Project Data.\n";
+        echo "\n=============================================\n";
+        echo "   CONFIDENTIAL DOCUMENT DATA:\n";
+        echo "   - Project Name: Operation CyberShield\n";
+        echo "   - Budget: $1,500,000\n";
+        echo "   - Status: Highly Classified\n";
+        echo "=============================================\n\n";
     }
 }
 
-// 3. Protection Proxy (The security guard)
+// ==========================================
+// 3. Protection & Caching Proxy
+// ==========================================
 class ProxyDocument implements DocumentInterface
 {
     private ?RealDocument $realDocument = null;
@@ -25,24 +42,52 @@ class ProxyDocument implements DocumentInterface
 
     public function display(): void
     {
-        if ($this->userRole === "ADMIN") {
-            if ($this->realDocument === null) {
-                $this->realDocument = new RealDocument();
-            }
-            $this->realDocument->display();
-        } else {
-            echo "Access Denied: You do not have permission to view this document.\n";
+        // Convert role to uppercase for safe comparison
+        $role = strtoupper(trim($this->userRole));
+
+        echo "\n   [PROXY] Checking authorization for role '{$role}'...\n";
+
+        // Access Control (Protection Proxy)
+        if ($role !== 'ADMIN') {
+            echo "   [PROXY] ACCESS DENIED! You do not have permission to view this document.\n\n";
+            return;
         }
+
+        echo "   [PROXY] Access Granted!\n";
+
+        // Lazy Loading & Caching (Virtual Proxy)
+        if ($this->realDocument === null) {
+            echo "   [PROXY] Initializing real document for the first time...\n";
+            $this->realDocument = new RealDocument();
+        } else {
+            echo "   [PROXY] Serving existing document from proxy memory (Cached)...\n";
+        }
+
+        // Delegate execution to the real subject
+        $this->realDocument->display();
     }
 }
 
-// --- CLIENT TEST EXECUTION ---
-echo "=== PROXY DESIGN PATTERN DEMO (PHP 8) ===\n\n";
+// ==========================================
+// 4. Interactive CLI Client
+// ==========================================
+echo "=============================================\n";
+echo "   IPT10 PROXY DESIGN PATTERN DEMONSTRATION  \n";
+echo "=============================================\n";
 
-echo "[Test 1] User Role: ADMIN\n";
-$adminProxy = new ProxyDocument("ADMIN");
-$adminProxy->display();
+// Prompt the user for input
+echo "Enter your user role (e.g., ADMIN, GUEST, STUDENT): ";
+$inputRole = readline();
 
-echo "\n[Test 2] User Role: GUEST\n";
-$guestProxy = new ProxyDocument("GUEST");
-$guestProxy->display();
+// Instantiate the proxy with the user's input role
+$proxy = new ProxyDocument($inputRole);
+
+// First call attempt
+echo "\n--- First Request Attempt ---";
+$proxy->display();
+
+// If the user is an admin, attempt a second request to show caching in action
+if (strtoupper(trim($inputRole)) === 'ADMIN') {
+    echo "--- Second Request Attempt (Testing Cache) ---";
+    $proxy->display();
+}
